@@ -1,0 +1,146 @@
+---
+title: "Lab Assessment-1"
+author: "Veydant Katyal"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+## Question-1
+Load the dataset into R and identify the data types for all columns.
+
+```{r}
+data <- read.csv("C:\\Users\\Veydant Katyal\\OneDrive\\Veydant\\Employee_Details.csv")
+str(data)
+
+```
+
+## Question-2
+Convert the Years_Service column to an integer data type and verify the change.
+
+```{r}
+data$Years_Service <- as.integer(data$Years_Service)
+str(data)
+```
+
+## Question-3
+Using a conditional statement, create a new column Year_Joining and display the details of the Employee who joined after 2005.
+
+```{r}
+data$Year_Joining <- 2025 - data$Years_Service  
+after_2005 <- subset(data, Year_Joining > 2005)
+print(after_2005)
+
+```
+
+## Question-4
+Write a loop to display the Emp_Id for all rows where Work_Hours is greater than 49.
+
+```{r}
+for (i in 1:nrow(data)) {
+  if (data$Work_Hours[i] > 49) {
+    print(data$Emp_Id[i])
+  }
+}
+```
+
+## Question-5
+Utilize a for loop to display the names of all employees in the dataset. 
+
+```{r}
+for (name in data$Emp_Name) {
+  print(name)
+}
+```
+
+## Question-6
+Employ a while loop to count the number of employees in each department. 
+
+```{r}
+department_count <- list()
+i <- 1
+while (i <= nrow(data)) {
+  dept <- data$Department[i]
+  department_count[[dept]] <- ifelse(is.null(department_count[[dept]]), 1, department_count[[dept]] + 1)
+  i <- i + 1
+}
+print(department_count)
+```
+
+## Question-7
+Using a repeat loop, find the first employee in the SCOPE department with more than
+10 years of service.
+
+```{r}
+i <- 1
+repeat {
+  if (data$Department[i] == "SCOPE" && data$Years_Service[i] > 10) {
+    print(data[i, ])
+    break
+  }
+  i <- i + 1
+}
+```
+
+## Question-8
+Calculate the range and standard deviation for the Work_Hours column.
+
+```{r}
+work_hours_range <- range(data$Work_Hours)
+work_hours_sd <- sd(data$Work_Hours)
+print(work_hours_range)
+print(work_hours_sd)
+```
+
+## Question-9
+Using replacement function replace Work_Hours 49 to 46 and display the column.
+
+```{r}
+data$Work_Hours[data$Work_Hours == 49] <- 46
+print(data$Work_Hours)
+```
+
+## Question-10
+Create a user-defined function that takes an employee’s salary, years of service, and
+department as arguments. The function should return "Eligible for Promotion" if the
+employee’s salary is above 55,000, has worked for more than 5 years. Otherwise, return
+"Not Eligible". Create new CSV file for eligible and update only eligible employee
+details.
+
+```{r}
+colnames(data)
+data$Salary <- as.numeric(as.character(data$Salary))
+data$Years_Service <- as.numeric(as.character(data$Years_Service))
+
+promotion_eligibility <- function(salary, years_service) {
+  if (salary > 55000 && years_service > 5) {
+    return("Eligible for Promotion")
+  } else {
+    return("Not Eligible")
+  }
+}
+
+data$Eligibility <- mapply(promotion_eligibility, data$Salary, data$Years_Service)
+eligible_employees <- subset(data, Eligibility == "Eligible for Promotion")
+write.csv(eligible_employees, "Eligible_Employees.csv", row.names = FALSE)
+print(eligible_employees)
+
+
+```
+
+
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,245 @@
+---
+title: "Assessment-6"
+author: "Veydant Katyal"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggcorrplot)
+library(treemap)
+library(ggthemes)
+library(ggforce)
+library(treemapify)
+```
+
+## DATA LOADING
+```{r}
+data <-read.csv("world-data.csv")
+# Convert Year to numeric if needed
+data$Year <- as.numeric(data$Year)
+# Check dataset structure
+str(data)
+```
+
+
+## Q-1 Download world bank data explorer dataset and implement visualizations possible on educational indicators for the following, using dplyr.
+
+## a. Present the wider and longer format of data for expenditure of any specific year.
+```{r}
+df_2010 <- data %>% filter(Year == 2010)
+# Convert to Longer Format
+df_long <- df_2010 %>% pivot_longer(cols = c(Expenditure), names_to = "Indicator", values_to
+= "Value")
+# Convert to Wider Format
+df_wide <- df_long %>% pivot_wider(names_from = Indicator, values_from = Value)
+# Print outputs
+print(df_long)
+
+```
+
+```{r}
+print(df_wide)
+```
+##  b. Compare the expenditure for the year 2001 and 2010 using.
+
+## Simple bar chart
+```{r}
+data %>% filter(Year %in% c(2001, 2010)) %>%
+ ggplot(aes(x = Country, y = Expenditure, fill = factor(Year))) +
+ geom_bar(stat = "identity", position = "dodge") +
+ theme_minimal() + labs(title = "Education Expenditure (2001 vs 2010)", x = "Country", y =
+"Expenditure (%)")
+
+```
+
+## Stacked Bar chart
+
+```{r}
+data %>% filter(Year %in% c(2001, 2010)) %>%
+ ggplot(aes(x = Country, y = Expenditure, fill = factor(Year))) +
+ geom_bar(stat = "identity", position = "stack") +
+ theme_minimal() + labs(title = "Stacked Bar Chart of Education Expenditure", x = "Country",
+y = "Expenditure (%)")
+```
+
+## Scatterplot matrix
+
+```{r}
+ggplot(data, aes(x = Year, y = Expenditure, color = Country)) +
+ geom_point() + facet_wrap(~ Country) +
+ theme_minimal() + labs(title = "Scatterplot Matrix of Education Expenditure")
+```
+
+## Facet grid and wrap
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+ggplot(data %>% filter(Year %in% c(2001, 2010)), 
+       aes(x = Expenditure, y = Literacy_Adult, color = factor(Year))) +
+  geom_point() +
+  facet_wrap(~ Country) +
+  theme_minimal() +
+  labs(title = "Facet Wrap: Literacy vs Expenditure",
+       color = "Year")
+
+```
+
+
+## c. Plot the expenditure in 1990 against 2014 using the `ggplot2` package.
+
+```{r}
+df_1990_2014 <- data %>% filter(Year %in% c(1990, 2014))
+ggplot(df_1990_2014, aes(x = Year, y = Expenditure, color = Country)) +
+ geom_line(aes(group = Country)) + geom_point() +
+ theme_minimal() + labs(title = "Education Expenditure Trend (1990 vs 2014)")
+```
+
+## d. Print the country spent more in 1990 and country spent more in 2014.
+
+```{r}
+top_1990 <- data %>% filter(Year == 1990) %>% arrange(desc(Expenditure)) %>% head(1)
+top_2014 <- data %>% filter(Year == 2014) %>% arrange(desc(Expenditure)) %>% head(1)
+print(top_1990)
+```
+
+```{r}
+print(top_2014)
+```
+
+## e. Compare fluctuations on expenditure in an indicator’s value across all the years.
+
+```{r}
+ggplot(data, aes(x = Year, y = Expenditure, color = Country)) +
+ geom_line() + geom_point() +
+ theme_minimal() + labs(title = "Fluctuations in Education Expenditure Across Years")
+```
+
+## f. Display the literacy rate versus unemployment rate in 2012 for adults.
+
+```{r}
+df_2012 <- data %>% filter(Year == 2012)
+ggplot(df_2012, aes(x = Literacy_Adult, y = Unemployment_Adult, color = Country)) +
+ geom_point(size = 3) +
+ theme_minimal() + labs(title = "Literacy Rate vs Unemployment Rate (Adults, 2012)")
+```
+
+## g. Display the literacy rate versus unemployment rate in 2012 for female.
+
+```{r}
+ggplot(df_2012, aes(x = Literacy_Female, y = Unemployment_Female, color = Country)) +
+ geom_point(size = 3) +
+ theme_minimal() + labs(title = "Literacy Rate vs Unemployment Rate (Females, 2012)")
+
+```
+
+## h.  Print the hierarchical plot applicable such as heatmap, tree map, circle packing and sunburst diagrams.
+
+## heatmap
+```{r}
+df_heatmap <- df_2012 %>% 
+  select(Literacy_Adult, Literacy_Female, Unemployment_Adult, Unemployment_Female)
+
+corr_matrix <- cor(df_heatmap, use = "complete.obs")
+
+ggcorrplot(corr_matrix, 
+           hc.order = TRUE, 
+           lab = TRUE,
+           title = "Correlation Heatmap (2012 Data)")
+```
+## treemap
+
+```{r}
+df_tree <- df_2012 %>% select(Country, Expenditure)
+treemap(df_tree,
+ index = "Country",
+ vSize = "Expenditure",
+ title = "Education Expenditure by Country (2012)")
+```
+
+## circle packing
+
+```{r}
+ggplot(df_2012, aes(area = Expenditure, fill = Country, label = Country)) +
+ geom_treemap() + geom_treemap_text() +
+ theme_minimal() + labs(title = "Circle Packing: Education Expenditure")
+
+```
+
+## sunburst diagram
+```{r}
+ggplot(df_2012, aes(area = Expenditure, fill = Country, label = Country)) +
+ geom_treemap() +
+ geom_treemap_text(grow = TRUE, reflow = TRUE) +
+ theme_minimal() + labs(title = "Sunburst-like Treemap: Education Expenditure")
+
+```
+
+## 2. Visualize the relationship between petal length and petal width across different species of flowers in the Iris dataset. Create a scatter plot with different colors representing species.
+
+```{r}
+ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Petal Length vs Petal Width in Different Species", x = "Petal Length", y = "Petal Width")
+
+```
+
+## 3. Study the effect of supplement type and dosage on tooth growth. Create a grouped bar chart to compare the average tooth length across supplement types and dosages.
+
+```{r}
+ggplot(ToothGrowth, aes(x = factor(dose), y = len, fill = supp)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Effect of Supplement Type and Dosage on Tooth Growth", x = "Dosage", y = "Tooth Length")
+
+```
+
+## 4.  Visualize the uptake of CO2 for plants grown under different conditions. Create a faceted line chart for CO2 uptake over time, with facets for different treatment conditions.
+
+```{r}
+ggplot(CO2, aes(x = conc, y = uptake, color = Treatment)) +
+  geom_line() +
+  facet_wrap(~Type) +
+  theme_minimal() +
+  labs(title = "CO2 Uptake over Time", x = "Concentration", y = "Uptake")
+```
+
+## 5. Compare the number of breaks across different tension levels and wool types in weaving. Create a stacked bar chart for the number of breaks grouped by wool type and tension level.
+
+```{r}
+ggplot(warpbreaks, aes(x = tension, y = breaks, fill = wool)) +
+  geom_bar(stat = "identity", position = "stack") +
+  theme_minimal() +
+  labs(title = "Breaks across Tension and Wool Type", x = "Tension Level", y = "Number of Breaks")
+
+```
+
+## 6. Analyze the waiting time between eruptions of the Old Faithful geyser. Create a histogram to show the distribution of waiting times.
+
+```{r}
+ggplot(faithful, aes(x = waiting)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) +
+  theme_minimal() +
+  labs(title = "Waiting Time Distribution of Old Faithful Geyser", 
+       x = "Waiting Time", 
+       y = "Count")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

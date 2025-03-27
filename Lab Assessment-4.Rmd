@@ -1,0 +1,167 @@
+---
+title: "Assessment-4"
+author: "Veydant Katyal"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question-1
+
+Download a dataset related to plants which are familiar in India and their diseases. Create multiple datasets (Tables) as per the requirement. (using DPLYR)
+
+Perform the following operations using DPLYR core functions on the dataset and apply the joins wherever possible: 
+
+# load all reuqired packages
+```{r}
+library(dplyr)
+```
+
+# load and inspect dataset
+```{r}
+plants_data <- read.csv("plant_disease_dataset_1.csv")
+glimpse(plants_data)
+head(plants_data)
+```
+
+# 1) Count the number of popular diseases. 
+
+```{r}
+disease_count <- plants_data %>%
+  count(Disease, sort = TRUE)
+
+print(disease_count)
+```
+
+# 2) Print the plants available in the states of India whose name starts with ‘A’. 
+
+```{r}
+plants_in_A_states <- plants_data %>%
+  filter(grepl("^A", State, ignore.case = TRUE)) %>%
+  select(Plant, State)
+
+print(plants_in_A_states)
+
+```
+
+# 3) Create the tables for south states and north states data and perform all the joins. 
+
+```{r}
+south_states <- c("Andhra Pradesh", "Tamil Nadu", "Karnataka", "Kerala", "Telangana")
+north_states <- c("Punjab", "Himachal Pradesh", "Uttar Pradesh", "Haryana", "Rajasthan", "Madhya Pradesh")
+
+south_plants <- plants_data %>% filter(State %in% south_states)
+north_plants <- plants_data %>% filter(State %in% north_states)
+
+inner_join_data <- inner_join(south_plants, north_plants, by = "Disease", suffix = c("_South", "_North"))
+left_join_data <- left_join(south_plants, north_plants, by = "Disease", suffix = c("_South", "_North"))
+right_join_data <- right_join(south_plants, north_plants, by = "Disease", suffix = c("_South", "_North"))
+full_join_data <- full_join(south_plants, north_plants, by = "Disease", suffix = c("_South", "_North"))
+
+print(inner_join_data)
+print(left_join_data)
+print(right_join_data)
+print(full_join_data)
+
+```
+
+# 4) Perform rename and mutate for common features in those tables(Q no c) 
+
+```{r}
+south_plants_renamed <- south_plants %>%
+  rename(Plant_Name = Plant) %>%
+  mutate(Severity_Level = case_when(
+    Severity == "Mild" ~ "Low",
+    Severity == "Moderate" ~ "Medium",
+    Severity == "Severe" ~ "High"
+  ))
+
+north_plants_renamed <- north_plants %>%
+  rename(Plant_Name = Plant) %>%
+  mutate(Severity_Level = case_when(
+    Severity == "Mild" ~ "Low",
+    Severity == "Moderate" ~ "Medium",
+    Severity == "Severe" ~ "High"
+  ))
+
+print(south_plants_renamed)
+print(north_plants_renamed)
+
+```
+
+# 5) Write the user defined function for finding disease which are common in all the states and call it in summarise function
+```{r}
+find_common_diseases <- function(data) {
+  data %>%
+    group_by(Disease) %>%
+    summarise(State_Count = n_distinct(State)) %>%
+    filter(State_Count == n_distinct(plants_data$State)) %>%
+    pull(Disease)
+}
+
+common_diseases <- find_common_diseases(plants_data)
+print(common_diseases)
+```
+
+# 6) Get unique plant names for a specific feature using pipes.  
+
+```{r}
+unique_severe_plants <- plants_data %>%
+  filter(Severity == "Severe") %>%
+  distinct(Plant)
+
+print(unique_severe_plants)
+```
+
+# 7) Apply the Group by function for mutated column in Q no d. 
+
+```{r}
+severity_grouped <- south_plants_renamed %>%
+  group_by(Severity_Level) %>%
+  summarise(Count = n())
+
+print(severity_grouped)
+```
+
+# 8) Find out the second maximum and second minimum plant names which are affected by most of the diseases. 
+```{r}
+plant_disease_count <- plants_data %>%
+  group_by(Plant) %>%
+  summarise(Disease_Count = n()) %>%
+  arrange(desc(Disease_Count))
+
+second_max_plant <- plant_disease_count %>%
+  slice(2) %>%
+  pull(Plant)
+
+second_min_plant <- plant_disease_count %>%
+  slice(n() - 1) %>%
+  pull(Plant)
+
+print(paste("Second Maximum:", second_max_plant))
+print(paste("Second Minimum:", second_min_plant))
+```
+
+# 9) Perform the functions suitable to ends-with, contains, one of, matches, everything, 
+
+```{r}
+filtered_plants <- plants_data %>%
+  filter(endsWith(Plant, "a") | grepl("fruit", Plant, ignore.case = TRUE))
+
+print(filtered_plants)
+```
+
+# 10) Apply rank function to the specific feature. 
+
+```{r}
+plants_data <- plants_data %>%
+  mutate(Yield_Loss_Rank = rank(-Yield_Loss_Percentage, ties.method = "first"))
+
+print(plants_data)
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
